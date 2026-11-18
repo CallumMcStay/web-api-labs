@@ -1,5 +1,6 @@
 import express from 'express';
 import User from './userModel';
+import asyncHandler from 'express-async-handler';
 
 const router = express.Router(); 
 
@@ -8,12 +9,23 @@ router.get('/', async (req, res) => {
     res.status(200).json(users);
 });
 
-router.post('/', async (req, res) => {
-    await User(req.body).save();
-    res.status(201).json({
-        code: 201,
-        msg: 'User created successfully'
-    });
-});
+router.post('/', asyncHandler(async (req, res) => {
+    if(req.query.action === 'register') { 
+         await User(req.body).save();
+        res.status(201).json({
+            code: 201,
+            msg: 'Successful created new user.',
+        });
+    }
+    else {
+        const user = await User.findOne(req.body);
+        if(!user) {
+            res.status(401).json({ code: 401, msg: 'Authentication failed' });
+        }
+        else{
+            return res.status(200).json({ code: 200, msg: "Authentication successful", token: 'TEMPORARY_TOKEN' });
+        }
+    }
+}));
 
 export default router;
